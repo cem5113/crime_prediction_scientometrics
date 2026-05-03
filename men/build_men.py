@@ -24,7 +24,7 @@ DATA_DIR = Path("data")
 OUT_DIR = Path("outputs/method_evolution_outputs")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-INPUT_FILE = DATA_DIR / "Bibliometrix_(WoS+Scopus).xlsx"
+INPUT_FILE = Path("data") / "Bibliometrix_(WoS+Scopus).xlsx"
 
 MIN_EDGE_WEIGHT = 2        
 MIN_NODE_FREQ = 2         
@@ -329,7 +329,7 @@ def plot_network(G, metrics, title, out_path):
 # 4. LOAD DATA
 # ============================================================
 
-df = pd.read_excel(INPUT_FILE)
+df = pd.read_excel(INPUT_FILE, engine="openpyxl")
 df = normalize_colnames(df)
 
 print("Loaded shape:", df.shape)
