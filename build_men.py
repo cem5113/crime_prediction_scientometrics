@@ -20,9 +20,11 @@ from pathlib import Path
 # 1. SETTINGS
 # ============================================================
 
-INPUT_FILE = "Bibliometrix (WoS+Scopus).xlsx"
-OUT_DIR = Path("method_evolution_outputs")
-OUT_DIR.mkdir(exist_ok=True)
+DATA_DIR = Path("data")
+OUT_DIR = Path("outputs/method_evolution_outputs")
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+INPUT_FILE = DATA_DIR / "Bibliometrix_(WoS+Scopus).xlsx"
 
 MIN_EDGE_WEIGHT = 2        
 MIN_NODE_FREQ = 2         
