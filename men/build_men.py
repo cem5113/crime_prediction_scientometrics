@@ -24,7 +24,7 @@ DATA_DIR = Path("data")
 OUT_DIR = Path("outputs/method_evolution_outputs")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-INPUT_FILE = Path("data") / "Bibliometrix_(WoS+Scopus).xlsx"
+INPUT_FILE = Path("data") / "Bibliometrix.xlsx"
 
 MIN_EDGE_WEIGHT = 2        
 MIN_NODE_FREQ = 2         
