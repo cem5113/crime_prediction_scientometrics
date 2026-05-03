@@ -7,23 +7,26 @@
 #   4. Export ESI tables and figures
 
 import pandas as pd
-from google.colab import files
+from pathlib import Path
 
-# Upload files
-uploaded = files.upload()
+# Paths
+DATA_DIR = Path("data")
+OUTPUT_DIR = Path("outputs")
+OUTPUT_DIR.mkdir(exist_ok=True)
 
-# Check uploaded file names
-print(uploaded.keys())
+PRE_FILE = DATA_DIR / "pre_ai.xlsx"
+POST_FILE = DATA_DIR / "post_ai.xlsx"
+OUTPUT_FILE = OUTPUT_DIR / "ESI_results.xlsx"
 
 # Read Excel files
-pre = pd.read_excel("pre_ai.xlsx")
-post = pd.read_excel("post_ai.xlsx")
+pre = pd.read_excel(PRE_FILE)
+post = pd.read_excel(POST_FILE)
 
 # Fix column names
 pre.columns = ["term", "freq"]
 post.columns = ["term", "freq"]
 
-# Convert terms to lowercase and strip spaces
+# Clean terms
 pre["term"] = pre["term"].astype(str).str.lower().str.strip()
 post["term"] = post["term"].astype(str).str.lower().str.strip()
 
@@ -41,14 +44,13 @@ post["term"] = post["term"].replace(mapping)
 pre = pre.groupby("term", as_index=False)["freq"].sum()
 post = post.groupby("term", as_index=False)["freq"].sum()
 
-# Combine all terms
+# Combine terms
 all_terms = set(pre["term"]).union(set(post["term"]))
-df = pd.DataFrame({"term": list(all_terms)})
+df = pd.DataFrame({"term": sorted(all_terms)})
 
 # Merge datasets
 df = df.merge(pre, on="term", how="left").rename(columns={"freq": "f_pre"})
 df = df.merge(post, on="term", how="left").rename(columns={"freq": "f_post"})
-
 df = df.fillna(0)
 
 # Normalize frequencies
@@ -65,13 +67,11 @@ print("ESI value:", round(ESI, 3))
 df_sorted = df.sort_values("diff", ascending=False)
 
 # Export to Excel
-output_file = "ESI_results.xlsx"
-
-with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+with pd.ExcelWriter(OUTPUT_FILE, engine="openpyxl") as writer:
     df_sorted.to_excel(writer, sheet_name="ESI_Terms", index=False)
     pd.DataFrame({
         "Metric": ["Epistemic Shift Index"],
         "Value": [round(ESI, 3)]
     }).to_excel(writer, sheet_name="ESI_Summary", index=False)
 
-files.download(output_file)
+print(f"Results saved to: {OUTPUT_FILE}")
