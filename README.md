@@ -1,8 +1,8 @@
-# Crime Prediction Scientometrics: ESI & MEN
+# Crime Prediction Scientometrics: CSI & MEN
 
 This repository provides code to analyze conceptual and methodological change in the crime prediction literature.
 
-- **Epistemic Shift Index (ESI)** measures changes in keyword distributions between pre-AI and post-AI periods.  
+- **Conceptual Shift Index (CSI)** measures changes in keyword distributions between pre-AI and post-AI periods.  
 - **Method Evolution Network (MEN)** builds method co-occurrence networks and computes centrality metrics over time.
 
 ---
@@ -11,7 +11,7 @@ This repository provides code to analyze conceptual and methodological change in
 
 .
 ├── data/        # Input data (Excel files)
-├── esi/         # ESI script
+├── csi/         # CSI script
 ├── men/         # MEN script
 ├── outputs/     # Generated results (ignored in Git)
 ├── requirements.txt
@@ -41,10 +41,10 @@ Run commands from the repository root directory.
 
 ### ESI
 
-python esi/compute_esi.py
+python csi/compute_csi.py
 
 Output:
-- outputs/ESI_results.xlsx
+- outputs/CSI_results.xlsx
 
 ---
 
