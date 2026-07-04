@@ -474,3 +474,111 @@ print("\nDONE.")
 print("Outputs saved to:", OUT_DIR.resolve())
 print("\nSummary:")
 print(summary)
+
+# ============================================================
+# 8. ROBUSTNESS CHECK: EQUAL-SIZE SUBSAMPLING
+# Purpose:
+#   Test whether the higher post-AI MEN density is only caused
+#   by the larger number of publications in the post-AI period.
+# ============================================================
+
+N_ITER = 1000
+RANDOM_SEED = 42
+
+pre_period = "pre_ai_1980_2016"
+post_period = "post_ai_2020_2025"
+
+df_pre = df_methods[df_methods["period"] == pre_period].copy()
+df_post = df_methods[df_methods["period"] == post_period].copy()
+
+n_pre = len(df_pre)
+n_post = len(df_post)
+
+print("Pre-AI papers with detected methods:", n_pre)
+print("Post-AI papers with detected methods:", n_post)
+
+if n_post < n_pre:
+    raise ValueError("Post-AI corpus is smaller than pre-AI corpus. Equal-size subsampling is not applicable.")
+
+subsample_rows = []
+
+rng = np.random.default_rng(RANDOM_SEED)
+
+for i in range(N_ITER):
+
+    sampled_idx = rng.choice(df_post.index, size=n_pre, replace=False)
+    df_sample = df_post.loc[sampled_idx].copy()
+
+    nodes = build_node_table(df_sample)
+    nodes = nodes[nodes["freq"] >= MIN_NODE_FREQ].copy()
+
+    valid_methods = set(nodes["method"])
+    df_sample["methods_filtered"] = df_sample["methods"].apply(
+        lambda ms: sorted([m for m in ms if m in valid_methods])
+    )
+
+    edges = build_edges(df_sample["methods_filtered"])
+    edges = edges[edges["weight"] >= MIN_EDGE_WEIGHT].copy()
+
+    if len(edges) > 0:
+        edge_nodes = set(edges["source"]).union(set(edges["target"]))
+        nodes = nodes[nodes["method"].isin(edge_nodes)].copy()
+
+    G, metrics = compute_network_metrics(edges, nodes)
+
+    density = nx.density(G) if len(G.nodes) > 1 else 0
+
+    subsample_rows.append({
+        "iteration": i + 1,
+        "sample_size": n_pre,
+        "n_nodes": len(G.nodes),
+        "n_edges": len(G.edges),
+        "density": density
+    })
+
+subsample_df = pd.DataFrame(subsample_rows)
+
+# Original pre and post densities from summary table
+pre_density = summary.loc[summary["period"] == pre_period, "density"].iloc[0]
+post_density = summary.loc[summary["period"] == post_period, "density"].iloc[0]
+
+robustness_summary = pd.DataFrame({
+    "Metric": [
+        "Pre-AI original density",
+        "Post-AI original density",
+        "Post-AI equal-size subsampling mean density",
+        "Post-AI equal-size subsampling SD",
+        "Post-AI equal-size subsampling 2.5 percentile",
+        "Post-AI equal-size subsampling 97.5 percentile"
+    ],
+    "Value": [
+        pre_density,
+        post_density,
+        subsample_df["density"].mean(),
+        subsample_df["density"].std(),
+        subsample_df["density"].quantile(0.025),
+        subsample_df["density"].quantile(0.975)
+    ]
+})
+
+print("\nEqual-size subsampling robustness summary:")
+print(robustness_summary)
+
+# Export outputs
+subsample_df.to_csv(
+    OUT_DIR / "men_equal_size_subsampling_iterations.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+robustness_summary.to_csv(
+    OUT_DIR / "men_equal_size_subsampling_summary.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+with pd.ExcelWriter(OUT_DIR / "men_equal_size_subsampling_results.xlsx", engine="openpyxl") as writer:
+    robustness_summary.to_excel(writer, sheet_name="Summary", index=False)
+    subsample_df.to_excel(writer, sheet_name="Iterations", index=False)
+
+print("\nRobustness outputs saved to:", OUT_DIR.resolve())
