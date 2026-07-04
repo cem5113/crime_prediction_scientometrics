@@ -63,15 +63,69 @@ CSI = 0.5 * df["diff"].sum()
 
 print("CSI value:", round(CSI, 3))
 
+# ============================================================
+# Sensitivity Analysis
+# ============================================================
+
+thresholds = [1, 2, 3, 5]
+sensitivity_results = []
+
+for t in thresholds:
+
+    # Apply minimum frequency threshold
+    pre_t = pre[pre["freq"] >= t].copy()
+    post_t = post[post["freq"] >= t].copy()
+
+    # Combine terms
+    all_terms_t = set(pre_t["term"]).union(set(post_t["term"]))
+    df_t = pd.DataFrame({"term": sorted(all_terms_t)})
+
+    # Merge
+    df_t = df_t.merge(pre_t, on="term", how="left").rename(columns={"freq": "f_pre"})
+    df_t = df_t.merge(post_t, on="term", how="left").rename(columns={"freq": "f_post"})
+    df_t = df_t.fillna(0)
+
+    # Normalize
+    df_t["p_pre"] = df_t["f_pre"] / df_t["f_pre"].sum()
+    df_t["p_post"] = df_t["f_post"] / df_t["f_post"].sum()
+
+    # CSI
+    df_t["diff"] = abs(df_t["p_post"] - df_t["p_pre"])
+    csi_t = 0.5 * df_t["diff"].sum()
+
+    sensitivity_results.append({
+        "Minimum keyword frequency":
+            "All keywords" if t == 1 else f"≥{t}",
+        "CSI": round(csi_t, 3),
+        "Retained terms": len(df_t),
+        "Pre-AI total frequency": int(pre_t["freq"].sum()),
+        "Post-AI total frequency": int(post_t["freq"].sum())
+    })
+
+sensitivity_df = pd.DataFrame(sensitivity_results)
+
+print("\nSensitivity Analysis")
+print(sensitivity_df)
+
 # Sort terms by change
 df_sorted = df.sort_values("diff", ascending=False)
 
 # Export to Excel
 with pd.ExcelWriter(OUTPUT_FILE, engine="openpyxl") as writer:
-    df_sorted.to_excel(writer, sheet_name="CSI_Terms", index=False)
+
+    df_sorted.to_excel(writer,
+                       sheet_name="CSI_Terms",
+                       index=False)
+
     pd.DataFrame({
         "Metric": ["Conceptual Shift Index"],
         "Value": [round(CSI, 3)]
-    }).to_excel(writer, sheet_name="CSI_Summary", index=False)
+    }).to_excel(writer,
+                sheet_name="CSI_Summary",
+                index=False)
+
+    sensitivity_df.to_excel(writer,
+                            sheet_name="CSI_Sensitivity",
+                            index=False)
 
 print(f"Results saved to: {OUTPUT_FILE}")
