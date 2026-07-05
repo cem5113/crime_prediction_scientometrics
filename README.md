@@ -27,7 +27,7 @@ Place the following files in the `data/` folder:
 - post_ai.xlsx  
 - Bibliometrix (WoS+Scopus).xlsx  
 
-Due to Web of Science and Scopus licensing restrictions, the original bibliographic dataset is not included in this repository. Users should export their own records and place the required Excel files in the data/ directory before running the scripts.
+- Due to Web of Science and Scopus licensing restrictions, the original bibliographic dataset is not included in this repository. Users should export their own records and place the required Excel files in the data/ directory before running the scripts.
 ---
 
 ## Installation
